@@ -6,4 +6,4 @@
 - [Ch.06 本地推理引擎](ch06.md) — vLLM、SGLang、LMDeploy、TGI、Ollama；吞吐 vs 延迟
 - [Ch.07 推理优化](ch07.md) — KV cache、prefix cache、speculative decoding、量化
 - [Ch.08 结构化输出与提示工程](ch08.md) — JSON Schema、Outlines、Instructor、Few-shot/CoT/ToT/Self-Consistency
-- [Ch.09 模型微调与对齐](ch09.md) — LoRA、QLoRA、PEFT、SFT、DPO、KTO；何时微调何时 RAG
+- [Ch.09 模型能力定制与知识增强](ch09.md) — 微调、对齐、RAG；让模型适配任务、偏好与外部知识
