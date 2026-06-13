@@ -227,7 +227,7 @@ mini-platform 假设的是渐进迁移路径，与既有系统通过 MCP/Functio
 
 | 形态 | mini-platform 模块 | 关联章节 |
 |---|---|---|
-| 任务型 Agent | `agents/data_agent/`、`agents/workflow_agent/` | Ch.32-37, Ch.54 |
+| 任务型 Agent | `agents/data_agent/`、`projects/multi-agent-workflow/lib/` | Ch.32-37, Ch.54 |
 | 协作型 Agent | `agents/devops_agent/` | Ch.24-25 |
 | Generative UI | `console/`（参考实现） | Ch.47-48 |
 | 既有系统工具化 | `tools/mcp_db/`、`tools/mcp_docs/` | Ch.24 |
