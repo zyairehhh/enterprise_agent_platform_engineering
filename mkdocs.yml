@@ -78,7 +78,7 @@ nav:
       - Ch.06 本地推理引擎: part02-model-inference/ch06.md
       - Ch.07 推理优化: part02-model-inference/ch07.md
       - Ch.08 结构化输出与提示工程: part02-model-inference/ch08.md
-      - Ch.09 模型微调与对齐: part02-model-inference/ch09.md
+      - Ch.09 模型能力定制与知识增强: part02-model-inference/ch09.md
 
   - Part III 数据基础设施:
       - part03-data-infra/index.md
