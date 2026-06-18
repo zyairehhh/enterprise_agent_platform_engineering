@@ -4,8 +4,8 @@
 > **关键议题**：Agent 服务等级目标；服务等级指标与错误预算；限流、熔断与降级；长任务恢复；步骤放大效应；容量规划；稳定性运营闭环
 > **前置阅读**：[Ch.22 Agent Runtime](../part05-agent-capabilities/ch22-agent-runtime.md)、[Ch.30 Human-in-the-loop 与长任务](../part05-agent-capabilities/ch30-human-in-the-loop.md)、[Ch.38 Agent 可观测性与运行诊断](ch38-trace.md)、[Ch.39 企业级 DataAgent 评测体系设计与 Benchmark 构建](ch39-dataagent-eval-benchmark.md)、[Ch.41 成本治理与缓存优化](ch41-cost-governance-cache.md)、[Ch.43 GPU 调度与 Kubernetes](../part08-deployment/ch43-gpu-kubernetes.md)
 > **估计阅读**：L1 20 min / L1+L2 60 min / 全章 110 min
-> **mini-platform 关联**：`core/runtime/`、`core/gateway/`、`core/observability/`、`core/policy/`
-> **实战项目**：`projects/11-vllm-litellm-gateway/`
+> **mini-platform 关联**：本章节暂不体现
+> **实战项目**：本章节暂不体现
 > **按角色推荐阅读**：平台负责人：1、2、4、8、9；架构师：全章；工程师：3、5、6、7 + 实战项目
 > **本章阅读层级**：L1 重点理解 SLO 与用户预期的关系，主要对应第 1、2、9 节；L2 重点理解指标拆解、错误预算和保护策略，主要对应第 3、4、5 节；L3 重点理解长任务、容量规划和运营闭环，主要对应第 6、7、8 节。
 
