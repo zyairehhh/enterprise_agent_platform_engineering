@@ -90,29 +90,7 @@ Agent 应用（`agents/`）组合 Prompt、默认工具集与 `planner.mode`；P
 **误区 2：在 Planner 里直接调 SQL。**  
 一旦 Planner 绕过 Registry，Ch.23 的版本治理、schema 校验与 `TOOL_NOT_FOUND` 分类全部失效，Trace 也会出现「有推理、无 action」的断档。
 
-#### 架构位置
-
-下图展示 Planner 在 L2 运行时中与 Runtime、Registry、Gateway 的调用关系：
-
-```mermaid
-flowchart TB
-    subgraph L2["L2 运行时"]
-        Runtime[Agent Runtime · Ch.22]
-        Planner[Planner · 本章]
-        Registry[Tool Registry · Ch.23]
-        Gateway[LLM Gateway · Ch.45]
-    end
-    Runtime -->|"next_step(run_ctx)"| Planner
-    Planner -->|"tools 列表"| Registry
-    Planner -->|"Chat + tools"| Gateway
-    Gateway -->|"tool_calls / text"| Planner
-    Planner -->|"PlannerDecision"| Runtime
-    Runtime -->|"invoke"| Registry
-    Registry -->|"output / error"| Runtime
-    Runtime -->|"result 反馈 Planner"| Planner
-```
-
-虚线语义：反馈 Planner 在实现上仍是 Runtime 更新 `RunContext` 后再次调用 `next_step`，不是 Planner 订阅事件总线——Demo 保持同步调用，生产可加队列（Ch.30）。
+Planner 与 Runtime、Registry、Gateway 的调用关系见 **图 P5-02**（Run 时序）与 **图 P5-03**（Registry 架构）。反馈 Planner 在实现上仍是 Runtime 更新 `RunContext` 后再次调用 `next_step`，不是 Planner 订阅事件总线——Demo 保持同步调用，生产可加队列（Ch.30）。
 
 ---
 
@@ -154,26 +132,7 @@ ReAct 模式下，Run 六态与 Planner 行为的对应关系如下：
 
 #### ReAct 时序
 
-下图展示 ReAct 模式下 Runtime、Planner、Gateway 与 Registry 的一次完整交互：
-
-```mermaid
-sequenceDiagram
-    participant R as Runtime
-    participant P as ReActPlanner
-    participant G as Gateway
-    participant Reg as Registry
-
-    R->>P: next_step(run_ctx)
-    P->>Reg: 读取 tools 定义
-    P->>G: Chat Completions + tools
-    G-->>P: tool_calls 或 最终文本
-    P-->>R: PlannerDecision（tool 或 finish）
-    R->>R: 触发 plan_ready / done 迁移
-    R->>Reg: invoke（执行，非 Planner）
-    Reg-->>R: output / RegistryError
-    R->>R: SSE result，更新 run_ctx
-    R->>P: next_step(run_ctx)（若未终态）
-```
+ReAct 即 **图 P5-02** 所示 Run 循环：`next_step` → Tool Call 或 FINISH → Registry `invoke` → `result` 写回 → 再 `next_step`，直至 Runtime 触发 `done`。
 
 #### 优势与代价
 
@@ -251,31 +210,9 @@ Ch.01 §2.4 取舍表与此一致：**成本敏感、需预审计用 Plan-and-Ex
 
 #### Plan-and-Execute 流程
 
-下图展示 Plan-and-Execute 从计划生成到逐步执行、可选 Replan 的完整流程：
+**图 P5-06** Plan-and-Execute 流程 · `images/ch/p5-06-plan-and-execute.png`
 
-```mermaid
-flowchart TD
-    Start([next_step 入口]) --> HasPlan{是否已有 Plan?}
-    HasPlan -->|否| GenPlan[Planning LLM 生成 Plan]
-    GenPlan --> StorePlan[写入 run_ctx / Memory]
-    StorePlan --> NeedApproval{Agent 需计划审批?}
-    NeedApproval -->|是| ReturnWait[Planner 产出 Plan artifact]
-    ReturnWait --> RTApproval[Runtime / Policy 触发 need_approval]
-    RTApproval --> WaitHuman[Run 进入 waiting_human]
-    NeedApproval -->|否| ExecStep
-    HasPlan -->|是| ExecStep[按 plan_cursor 执行当前步]
-    ExecStep --> LLM[Execution LLM + tools]
-    LLM --> Decision{PlannerDecision}
-    Decision -->|tool| RT[Runtime invoke]
-    Decision -->|finish| Done[Runtime 触发 done 迁移]
-    RT --> Observe[Observation 写入 run_ctx]
-    Observe --> Replan{是否 replan?}
-    Replan -->|是| GenPlan
-    Replan -->|否| Cursor[plan_cursor += 1]
-    Cursor --> HasMore{还有未执行步?}
-    HasMore -->|是| ExecStep
-    HasMore -->|否| Done
-```
+![Plan-and-Execute 流程](images/ch/p5-06-plan-and-execute.png)
 
 #### Replan 与 Ch.22 失败策略
 
@@ -291,7 +228,7 @@ Plan-and-Execute 的计划对象是企业 **流程数字化的资产**：可与 
 
 **计划审批** 边界：Planner 在 Planning 阶段只产出 **Plan artifact**（步骤列表或结构化 JSON），不执行工具；Execute 阶段按 plan 逐步返回 `PlannerDecision`（每次至多一个 Tool Call 提议）。若企业要求「整段计划须人审」，**不是** Planner 返回特殊「等待审批」决策，而是 Runtime 在收到 Plan artifact 后由 Policy 触发 `need_approval` → `waiting_human`（Ch.30）。审批通过后，Runtime 才允许 Execute 阶段继续逐步 `invoke`。Planner 始终不驱动状态机迁移。
 
-下图中的 `ReturnWait` / `RTApproval` 表示 **Runtime / Policy 侧** 的审批触发，不是 Planner 的一种决策类型。
+**图 P5-06** 中的 `ReturnWait` / `RTApproval` 表示 **Runtime / Policy 侧** 的审批触发，不是 Planner 的一种决策类型。
 
 #### 常见误区
 
@@ -351,7 +288,7 @@ Planner 内部状态变化时，由 **Runtime 或 Planner 适配层** 触发 Run
 
 Masterman 等（2024）综述指出：新兴 Agent 架构常在 **推理-规划-工具调用** 上分阶段，但生产系统须防止「框架内部状态」与「产品状态」分裂 [12]——映射层是平台工程项，不是可选文档项。
 
-#### 工作流取舍：何时上图
+#### 工作流取舍：何时使用显式 StateGraph
 
 **用 RunLoop + mode 足够：**
 
@@ -365,28 +302,16 @@ Masterman 等（2024）综述指出：新兴 Agent 架构常在 **推理-规划-
 - **条件子图** 复用（如「仅当数据敏感走脱敏分支」）；
 - 须 **节点级** 回放与 A/B（Ch.38）。
 
-#### 编排图示意（Planner 内部，非 Run 六态）
+#### Planner 内部状态（文字对照）
 
-下图展示 Planner 内部状态机（ReAct 与 Plan-and-Execute 共用入口），终点均返回 Runtime：
+ReAct 与 Plan-and-Execute 共用 `next_step` 入口，内部分支如下（Run 六态迁移仍在 Runtime，见 **图 P5-01**）：
 
-```mermaid
-stateDiagram-v2
-    [*] --> LoadCtx: 进入 next_step
-    LoadCtx --> PlanPhase: mode=plan_execute 且无 plan
-    LoadCtx --> ReactLLM: mode=react
-    PlanPhase --> WaitApproval: 需计划审批
-    WaitApproval --> ExecutePhase: approved
-    PlanPhase --> ExecutePhase: 无需审批
-    ReactLLM --> ProposeTool: 有 tool_calls
-    ReactLLM --> ProposeFinish: 无 tool_calls
-    ExecutePhase --> ProposeTool
-    ExecutePhase --> Replan: 观察与 plan 不符
-    Replan --> PlanPhase
-    ProposeTool --> [*]: 返回 PlannerDecision
-    ProposeFinish --> [*]: finish=True
-```
-
-实线终点表示 **返回 Runtime**；Run 六态迁移发生在 Runtime 侧，不在此图内重复绘制。
+| 分支 | 条件 | 终点 |
+| --- | --- | --- |
+| `ReactLLM` | `mode=react` | 返回 Tool Call 或 `finish=True` |
+| `PlanPhase` | `mode=plan_execute` 且无 plan | 生成 Plan；可选触发 `waiting_human`（图 P5-06） |
+| `ExecutePhase` | 已有 plan | 按 `plan_cursor` 逐步执行；观察不符时可 Replan |
+| `ProposeTool` / `ProposeFinish` | LLM 输出 | 返回 `PlannerDecision` 给 Runtime |
 
 #### 常见误区
 
