@@ -73,12 +73,11 @@ SPECIAL_H3_HEADINGS = {
     "事故复盘模板",
     "关键指标改进效果",
 }
-REQUIRED_FRONT_MATTER_HEADINGS = [
+FORBIDDEN_FRONT_MATTER_HEADINGS = {
     "本章摘要",
     "关键词",
     "学习目标",
-    "场景引入",
-]
+}
 NARRATIVE_LEAD_CHAPTERS = {
     Path("part01-overview/ch/ch01-agent.md"),
     Path("part01-overview/ch/ch02-agent.md"),
@@ -266,45 +265,18 @@ def front_matter_errors(lines: list[str], rel: Path) -> list[str]:
         return ["missing first numbered H2 body section"]
 
     front_lines = lines[:first_numbered_h2]
-    if rel in NARRATIVE_LEAD_CHAPTERS:
-        headings = [
-            line[3:].strip()
-            for line in front_lines
-            if line.startswith("## ")
-        ]
-        forbidden = [
-            heading
-            for heading in ("本章摘要", "关键词", "学习目标")
-            if heading in headings
-        ]
-        if forbidden:
-            errors.append(
-                "narrative lead chapters must not include: " + ", ".join(forbidden)
-            )
-        if "场景引入" not in headings:
-            errors.append("narrative lead chapters must include 场景引入")
-        lead_chars = sum(
-            len(line.strip())
-            for line in front_lines
-            if line.strip() and not line.startswith("#") and not line.startswith("---")
-        )
-        if lead_chars < 600:
-            errors.append("narrative lead before first numbered section is too short")
-        return errors
+    headings = [line[3:].strip() for line in front_lines if line.startswith("## ")]
+    forbidden = sorted(FORBIDDEN_FRONT_MATTER_HEADINGS.intersection(headings))
+    if forbidden:
+        errors.append("published chapters must not include: " + ", ".join(forbidden))
 
-    seen: list[str] = []
-    for line in front_lines:
-        if not line.startswith("## "):
-            continue
-        heading = line[3:].strip()
-        if heading in REQUIRED_FRONT_MATTER_HEADINGS:
-            seen.append(heading)
-
-    if seen != REQUIRED_FRONT_MATTER_HEADINGS:
-        errors.append(
-            "front matter must be ordered as: "
-            + " -> ".join(REQUIRED_FRONT_MATTER_HEADINGS)
-        )
+    lead_chars = sum(
+        len(line.strip())
+        for line in front_lines
+        if line.strip() and not line.startswith("#") and not line.startswith("---")
+    )
+    if lead_chars < 600:
+        errors.append("narrative lead before first numbered section is too short")
 
     for line in front_lines:
         if line.startswith(">"):
