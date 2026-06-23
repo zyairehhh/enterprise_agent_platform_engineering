@@ -32,3 +32,40 @@
 .md-typeset p em {
   color: var(--md-default-fg-color--light);
 }
+
+@media screen and (min-width: 76.25em) {
+  .md-grid {
+    max-width: 92rem;
+  }
+
+  .md-main__inner {
+    column-gap: 1.2rem;
+  }
+
+  .md-sidebar {
+    width: 12rem;
+  }
+
+  .md-content {
+    max-width: none;
+  }
+
+  .md-content__inner {
+    margin-left: 1.2rem;
+    margin-right: 1.2rem;
+  }
+}
+
+@media screen and (min-width: 100em) {
+  .md-grid {
+    max-width: 106rem;
+  }
+
+  .md-main__inner {
+    column-gap: 1.4rem;
+  }
+
+  .md-sidebar {
+    width: 12.5rem;
+  }
+}

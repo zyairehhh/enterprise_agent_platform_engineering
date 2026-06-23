@@ -205,7 +205,7 @@ projects/multi-agent-workflow/lib/
 
 ### 25.5.2 配置示例
 
-Planner 模式应放在 Agent 配置里，而不是写死在 Prompt 中。
+Planner 模式适合放在 Agent 配置里，由平台在发布、灰度和回放时统一读取；如果写死在 Prompt 中，运行记录很难解释一次决策到底来自配置、模型还是提示词临时约束。
 
 ```yaml
 agent_id: demo-data-agent
